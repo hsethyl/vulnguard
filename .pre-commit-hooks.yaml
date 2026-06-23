@@ -1,0 +1,16 @@
+# Lets OTHER repositories use vulnguard as a pre-commit hook:
+#
+#   # .pre-commit-config.yaml in a consumer repo
+#   repos:
+#     - repo: https://github.com/<you>/vulnguard
+#       rev: v0.1.0
+#       hooks:
+#         - id: vulnguard
+#
+- id: vulnguard
+  name: vulnguard security scan
+  description: Scan staged code for vulnerabilities, secrets, and bad config.
+  entry: vulnguard scan --fail-on HIGH
+  language: python
+  types: [text]
+  require_serial: true

@@ -1,0 +1,13 @@
+# Runs vulnguard against its OWN repository on each commit (dogfooding).
+# Install once:  pip install pre-commit && pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: vulnguard
+        name: vulnguard security scan
+        description: Scan staged files for vulnerabilities and secrets.
+        entry: python -m vulnguard scan --fail-on HIGH
+        language: system
+        types: [text]
+        exclude: ^(examples/|tests/)
+        require_serial: true
