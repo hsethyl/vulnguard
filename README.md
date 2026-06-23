@@ -50,7 +50,19 @@ TLS 사용 여부, 소프트웨어 버전 노출(DAST001~008).
 
 > 비로컬 호스트는 `--i-am-authorized` 플래그로 **명시적 권한 확인**을 요구합니다.
 
-## 사용법
+## 원클릭 실행파일 (Windows, USB 휴대용)
+
+설치·파이썬 없이 더블클릭만으로 쓰는 GUI 버전입니다.
+
+```bat
+build_exe.bat        REM  → dist\VulnGuard.exe 생성 (12MB 단일 파일)
+```
+
+`dist\VulnGuard.exe` 하나만 USB에 복사하면 어느 Windows PC에서나 더블클릭으로
+실행됩니다. 창에서 **폴더 선택 → 검사 시작 → (자동수정 미리보기 → 수정 적용)**.
+직접 실행해 보려면 `python -m vulnguard.gui`. 자세한 사용자 안내는 `dist\사용법.txt`.
+
+## 사용법 (CLI)
 
 ```bash
 # 정적 스캔
