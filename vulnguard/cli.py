@@ -11,6 +11,7 @@ import argparse
 import sys
 
 from . import __version__
+from .config import load_config
 from .dast.client import DastError, scan_url
 from .engine import scan_path, scan_paths
 from .fixers.engine import apply_fixes
@@ -39,9 +40,9 @@ def _render(result: ScanResult, fmt: str, root: str) -> str:
 
 
 def _exit_code(result: ScanResult, fail_on: str | None) -> int:
-    if not fail_on:
+    threshold = _FAIL_LEVELS.get(fail_on) if fail_on else None
+    if threshold is None:
         return 0
-    threshold = _FAIL_LEVELS[fail_on]
     worst = max((f.severity for f in result.findings), default=None)
     if worst is not None and worst >= threshold:
         return 2
@@ -52,7 +53,9 @@ def cmd_scan(args: argparse.Namespace) -> int:
     label = args.paths[0] if len(args.paths) == 1 else f"{len(args.paths)} targets"
     result = scan_paths(args.paths, osv=args.osv)
     _write_output(_render(result, args.format, label), args.output)
-    return _exit_code(result, args.fail_on)
+    # CLI flag wins; otherwise fall back to fail_on from .vulnguard.toml.
+    fail_on = args.fail_on or load_config(args.paths[0]).fail_on
+    return _exit_code(result, fail_on)
 
 
 def cmd_fix(args: argparse.Namespace) -> int:

@@ -18,6 +18,10 @@
 - **JavaScript/TypeScript (정규식 기반)**: `innerHTML`(JS001), `document.write`(JS002),
   `eval`(JS003), `new Function`(JS004), `child_process.exec`(JS005),
   `dangerouslySetInnerHTML`(JS006), 문자열 `setTimeout/setInterval`(JS007)
+- **Go (정규식 기반)**: 셸 명령 주입 `exec.Command("sh",...)`(GO001), SQL 인젝션(GO002),
+  약한 해시 md5/sha1(GO003), TLS 검증 비활성 `InsecureSkipVerify: true`(GO004)
+- **Java (정규식 기반)**: `Runtime.exec`(JAVA001), SQL 문자열 결합(JAVA002),
+  약한 해시 MD5/SHA-1(JAVA003), 안전하지 않은 역직렬화 `readObject`(JAVA004)
 - **하드코딩 시크릿**: private key, AWS 키, `sk-`/GitHub/Slack 토큰, Google API 키, JWT
   (SEC001~005, SEC007/008) + 엔트로피 분석 기반 범용 시크릿 탐지(SEC006)
 - **프로젝트 점검**: `.env` 등 시크릿 파일이 `.gitignore`로 보호되는지(PRJ001),
@@ -33,6 +37,7 @@
 - `verify=False` → `verify=True` (TLS 검증 복원)
 - `debug=True` → `debug=False` (운영 디버그 서버 비활성)
 - `autoescape=False` → `autoescape=True` (템플릿 이스케이프 복원)
+- Go `InsecureSkipVerify: true` → `false` (TLS 검증 복원)
 - 하드코딩 시크릿 → `os.environ["NAME"]` (필요 시 `import os` 추가, `.env.example` 생성)
 - 취약 의존성 → 안전 버전으로 핀 업그레이드
 
@@ -63,6 +68,19 @@ python -m vulnguard dast http://localhost:8000              # 로컬은 플래�
 python -m vulnguard dast https://my-site.com --i-am-authorized
 ```
 
+## 설정 (`.vulnguard.toml`, 선택)
+
+프로젝트 루트에 두면 규칙/경로를 끄거나 기본 임계값을 정할 수 있습니다.
+
+```toml
+[ignore]
+rules = ["PY007", "DAST003"]      # 특정 규칙 끄기
+paths = ["legacy/", "*.min.js"]   # 파일/폴더 제외 (glob)
+
+[scan]
+fail_on = "HIGH"                  # --fail-on 기본값 (CLI 플래그가 우선)
+```
+
 ## CI / pre-commit 통합 (shift-left)
 
 커밋·PR 단계에서 자동으로 막습니다.
@@ -91,7 +109,7 @@ python -m vulnguard fix  examples/vulnerable_app          # dry-run
 
 ```bash
 python -m pip install pytest
-python -m pytest -q        # 85 tests
+python -m pytest -q        # 104 tests
 ```
 
 ## 구조
@@ -101,12 +119,13 @@ vulnguard/
   cli.py                 # 진입점 (scan / fix / dast)
   engine.py              # 디렉터리 순회 + 스캐너 디스패치 + OSV 보강
   models.py              # Finding / ScanResult (immutable)
-  scanner/               # python · js · secret · dependency · project · osv_client
+  scanner/               # python · js · go · java · secret · dependency · project · osv_client
   fixers/                # line_fixes · dependency_fixes · engine (백업/diff/.env)
   dast/                  # analyzer(순수 헤더 분석) · client(네트워크 + 권한 게이트)
+  config.py              # .vulnguard.toml 로더 (규칙/경로 제외)
   report/                # console · json · sarif
   data/vuln_db.py        # 오프라인 CVE 샘플 DB
-tests/                   # 규칙별 탐지/오탐/수정 테스트 (85개)
+tests/                   # 규칙별 탐지/오탐/수정 테스트 (104개)
 .github/workflows/       # GitHub Actions 보안 스캔 (SARIF 업로드 + fail-on)
 .pre-commit-hooks.yaml   # 다른 저장소에서 pre-commit 훅으로 사용
 .pre-commit-config.yaml  # 자체 저장소 dogfooding 훅

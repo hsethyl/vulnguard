@@ -5,8 +5,11 @@ from __future__ import annotations
 import os
 from typing import Callable
 
+from .config import load_config
 from .models import Finding, ScanResult
 from .scanner.dependency_scanner import extract_dependencies, scan_dependency_file
+from .scanner.go_scanner import scan_go_file
+from .scanner.java_scanner import scan_java_file
 from .scanner.osv_client import OSVError, query_osv
 from .scanner.js_scanner import scan_js_file
 from .scanner.project_scanner import scan_project
@@ -21,6 +24,8 @@ _IGNORED_DIRS = {
 
 _PYTHON_EXT = {".py", ".pyw"}
 _JS_EXT = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}
+_GO_EXT = {".go"}
+_JAVA_EXT = {".java"}
 _DEP_FILES = {"requirements.txt", "package.json"}
 # Files we run secret detection on (text-ish files).
 _SECRET_EXT = {
@@ -42,6 +47,10 @@ def _scanners_for(file_path: str) -> list[Callable[[str], list[Finding]]]:
         scanners.append(scan_python_file)
     if ext in _JS_EXT:
         scanners.append(scan_js_file)
+    if ext in _GO_EXT:
+        scanners.append(scan_go_file)
+    if ext in _JAVA_EXT:
+        scanners.append(scan_java_file)
     if name in _DEP_FILES:
         scanners.append(scan_dependency_file)
     if ext in _SECRET_EXT or name in _DEP_FILES:
@@ -102,7 +111,11 @@ def scan_path(root: str, osv: bool = False) -> ScanResult:
         findings, osv_errors = _augment_with_osv(findings, dep_files)
         errors.extend(osv_errors)
 
-    return ScanResult(findings=tuple(findings), scanned_files=scanned, errors=tuple(errors))
+    # Apply .vulnguard.toml ignore rules/paths, if a config is present.
+    config = load_config(root)
+    kept = list(config.filter(tuple(findings)))
+
+    return ScanResult(findings=tuple(kept), scanned_files=scanned, errors=tuple(errors))
 
 
 def scan_paths(paths: list[str], osv: bool = False) -> ScanResult:

@@ -64,6 +64,7 @@ def fix_hardcoded_secret(line: str) -> Optional[LineFix]:
 _VERIFY_FALSE = re.compile(r"verify\s*=\s*False")
 _DEBUG_TRUE = re.compile(r"debug\s*=\s*True")
 _AUTOESCAPE_FALSE = re.compile(r"autoescape\s*=\s*False")
+_INSECURE_SKIP_VERIFY = re.compile(r"InsecureSkipVerify\s*:\s*true")
 
 
 def fix_verify_false(line: str) -> Optional[LineFix]:
@@ -87,11 +88,19 @@ def fix_autoescape_false(line: str) -> Optional[LineFix]:
     return LineFix(new_line=_AUTOESCAPE_FALSE.sub("autoescape=True", line))
 
 
+def fix_insecure_skip_verify(line: str) -> Optional[LineFix]:
+    """Go: InsecureSkipVerify: true -> false (restore TLS verification)."""
+    if not _INSECURE_SKIP_VERIFY.search(line):
+        return None
+    return LineFix(new_line=_INSECURE_SKIP_VERIFY.sub("InsecureSkipVerify: false", line))
+
+
 # rule_id -> line fixer
 LINE_FIXERS = {
     "PY006": fix_yaml_load,
     "PY009": fix_verify_false,
     "PY010": fix_debug_true,
     "PY013": fix_autoescape_false,
+    "GO004": fix_insecure_skip_verify,
     "SEC006": fix_hardcoded_secret,
 }
