@@ -22,8 +22,10 @@ jobs:
       - name: Install vulnguard
         run: pip install -e .
 
+      # Scan the product source only. The examples/ and tests/ dirs contain
+      # deliberately vulnerable fixtures, so they are excluded here.
       - name: Run vulnguard (SARIF report)
-        run: python -m vulnguard scan . --osv --format sarif -o vulnguard.sarif
+        run: python -m vulnguard scan vulnguard --osv --format sarif -o vulnguard.sarif
 
       - name: Upload SARIF to code scanning
         if: always()
@@ -32,4 +34,4 @@ jobs:
           sarif_file: vulnguard.sarif
 
       - name: Fail the build on HIGH+ findings
-        run: python -m vulnguard scan . --fail-on HIGH
+        run: python -m vulnguard scan vulnguard --fail-on HIGH
